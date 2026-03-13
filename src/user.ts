@@ -17,12 +17,20 @@ export class User {
   name: string;
   wallet: number;
   orders: Order[];
+  initialWallet: number;
 
   constructor(id: number, name: string, wallet: number) {
     this.id = id;
     this.name = name;
     this.wallet = wallet;
+    this.initialWallet = wallet;
     this.orders = this.loadOrders();
+  }
+
+  clearHistory(): void {
+    this.orders = [];
+    this.wallet = this.initialWallet;
+    this.saveOrders();
   }
 
   orderMeal(meal: Meal): Order {
@@ -39,6 +47,7 @@ export class User {
       id: Date.now(),
       meals: [meal],
       total: meal.price,
+      createdAt: new Date().toISOString(),
     };
 
     this.orders.push(order);
@@ -67,11 +76,11 @@ export class User {
   }
 
   private loadOrders(): Order[] {
-    const savedOrders = localStorage.getItem(`orders_${this.id}`);
+    const saved = localStorage.getItem(`orders_${this.id}`);
     const savedWallet = localStorage.getItem(`wallet_${this.id}`);
     if (savedWallet !== null) {
       this.wallet = JSON.parse(savedWallet);
     }
-    return savedOrders ? JSON.parse(savedOrders) : [];
+    return saved ? JSON.parse(saved) : [];
   }
 }

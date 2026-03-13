@@ -20,6 +20,9 @@ const errorEl = document.getElementById("error") as HTMLElement | null;
 const filterInput = document.getElementById(
   "filterPrice",
 ) as HTMLInputElement | null;
+const clearBtn = document.getElementById(
+  "clearHistory",
+) as HTMLButtonElement | null;
 
 let allMeals: Meal[] = [];
 
@@ -34,6 +37,13 @@ function renderTotalSpent(): void {
   if (!totalSpentEl) return;
   totalSpentEl.textContent = `Total dépensé : ${user.getTotalSpent().toFixed(2)}€`;
 }
+// Vider historique
+clearBtn?.addEventListener("click", () => {
+  user.clearHistory();
+  renderHistory();
+  renderWallet();
+  renderTotalSpent();
+});
 
 // Affichage repas
 function renderMeals(meals: Meal[]): void {
@@ -64,13 +74,15 @@ function renderHistory(): void {
   user.orders.forEach((order) => {
     const li = document.createElement("li");
     const mealNames = order.meals.map((m) => m.name).join(", ");
+    const date = new Date(order.createdAt).toLocaleString();
 
     li.className =
       "list-group-item d-flex justify-content-between align-items-center";
     li.innerHTML = `
-        <span>#${order.id} — ${mealNames} — ${order.total.toFixed(2)} €</span>
-        <button class="btn btn-sm btn-danger">Supprimer</button>
-        `;
+      <span>#${order.id} — ${mealNames} — ${order.total.toFixed(2)} € — ${date}</span>
+      <button class="btn btn-sm btn-danger">Supprimer</button>
+    `;
+
     const deleteBtn = li.querySelector("button");
     deleteBtn?.addEventListener("click", () => {
       user.deleteOrder(order.id);
@@ -105,10 +117,12 @@ function handleOrder(meal: Meal): void {
 // Filtre prix
 filterInput?.addEventListener("input", () => {
   const maxPrice = parseFloat(filterInput.value);
+  const sortedMeals = [...allMeals].sort((a, b) => a.price - b.price);
+
   if (isNaN(maxPrice)) {
-    renderMeals(allMeals);
+    renderMeals(sortedMeals);
   } else {
-    renderMeals(allMeals.filter((meal) => meal.price <= maxPrice));
+    renderMeals(sortedMeals.filter((meal) => meal.price <= maxPrice));
   }
 });
 
