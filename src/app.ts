@@ -1,78 +1,99 @@
-import { fetchMeals } from "./meal.ts";
-import { User, TropPauvreErreur } from "./user.ts";
-import { Meal } from "./types.ts";
+import { fetchMeals } from "./meal.js";
+import { User, TropPauvreErreur } from "./user.js";
+import { Meal } from "./types.js";
 
-// --- Initialisation de l'utilisateur ---
+// Initialisation de l'utilisateur
 const user = new User(1, "Bob", 30);
 
-// --- Sélection des éléments DOM ---
-const mealListEl = document.getElementById("mealList") as HTMLUListElement;
-const walletEl = document.getElementById("wallet") as HTMLElement;
+//DOM
+const mealListEl = document.getElementById(
+  "mealList",
+) as HTMLUListElement | null;
+const walletEl = document.getElementById("wallet") as HTMLElement | null;
 const orderHistoryEl = document.getElementById(
   "orderHistory",
-) as HTMLUListElement;
-const totalSpentEl = document.getElementById("totalSpent") as HTMLElement;
-const errorEl = document.getElementById("error") as HTMLElement;
-const filterInput = document.getElementById("filterPrice") as HTMLInputElement;
+) as HTMLUListElement | null;
+const totalSpentEl = document.getElementById(
+  "totalSpent",
+) as HTMLElement | null;
+const errorEl = document.getElementById("error") as HTMLElement | null;
+const filterInput = document.getElementById(
+  "filterPrice",
+) as HTMLInputElement | null;
 
 let allMeals: Meal[] = [];
 
-// --- Affichage du portefeuille ---
+// Affichage portefeuille
 function renderWallet(): void {
+  if (!walletEl) return;
   walletEl.textContent = `Solde : ${user.wallet.toFixed(2)}€`;
 }
 
-// --- Affichage du total dépensé ---
+// Affichage dépense
 function renderTotalSpent(): void {
+  if (!totalSpentEl) return;
   totalSpentEl.textContent = `Total dépensé : ${user.getTotalSpent().toFixed(2)}€`;
 }
 
-// --- Affichage des repas ---
+// Affichage repas
 function renderMeals(meals: Meal[]): void {
+  if (!mealListEl) return;
+
   mealListEl.innerHTML = "";
+
   meals.forEach((meal) => {
     const li = document.createElement("li");
-    li.className = "meal-item";
+    li.className =
+      "list-group-item d-flex justify-content-between align-items-center";
     li.innerHTML = `
-      <span>${meal.name} — ${meal.price}€ (${meal.calories} kcal)</span>
-      <button data-id="${meal.id}">Commander</button>
+      <span>${meal.name} — ${meal.price.toFixed(2)} € (${meal.calories} kcal)</span>
+      <button class="btn btn-sm btn-primary">Commander</button>
     `;
-    const btn = li.querySelector("button")!;
-    btn.addEventListener("click", () => handleOrder(meal));
+    const btn = li.querySelector("button");
+    btn?.addEventListener("click", () => handleOrder(meal));
     mealListEl.appendChild(li);
   });
 }
 
-// --- Affichage de l'historique ---
+// Affichage historique
 function renderHistory(): void {
+  if (!orderHistoryEl) return;
+
   orderHistoryEl.innerHTML = "";
+
   user.orders.forEach((order) => {
     const li = document.createElement("li");
     const mealNames = order.meals.map((m) => m.name).join(", ");
+
+    li.className =
+      "list-group-item d-flex justify-content-between align-items-center";
     li.innerHTML = `
-      <span>#${order.id} — ${mealNames} — ${order.total}€</span>
-      <button class="delete-btn" data-order-id="${order.id}">Supprimer</button>
-    `;
-    const deleteBtn = li.querySelector(".delete-btn")!;
-    deleteBtn.addEventListener("click", () => {
+        <span>#${order.id} — ${mealNames} — ${order.total.toFixed(2)} €</span>
+        <button class="btn btn-sm btn-danger">Supprimer</button>
+        `;
+    const deleteBtn = li.querySelector("button");
+    deleteBtn?.addEventListener("click", () => {
       user.deleteOrder(order.id);
       renderHistory();
       renderWallet();
       renderTotalSpent();
     });
+
     orderHistoryEl.appendChild(li);
   });
 }
 
-// --- Gestion d'une commande ---
+// Commande
 function handleOrder(meal: Meal): void {
-  errorEl.textContent = "";
+  if (errorEl) errorEl.textContent = "";
   try {
     user.orderMeal(meal);
     renderWallet();
     renderHistory();
     renderTotalSpent();
   } catch (e) {
+    if (!errorEl) return;
+
     if (e instanceof TropPauvreErreur) {
       errorEl.textContent = e.message;
     } else {
@@ -81,17 +102,17 @@ function handleOrder(meal: Meal): void {
   }
 }
 
-// --- Filtrage par prix ---
+// Filtre prix
 filterInput?.addEventListener("input", () => {
   const maxPrice = parseFloat(filterInput.value);
   if (isNaN(maxPrice)) {
     renderMeals(allMeals);
   } else {
-    renderMeals(allMeals.filter((m) => m.price <= maxPrice));
+    renderMeals(allMeals.filter((meal) => meal.price <= maxPrice));
   }
 });
 
-// --- Démarrage de l'application ---
+// Démarrage app
 async function init(): Promise<void> {
   renderWallet();
   renderHistory();
@@ -101,8 +122,10 @@ async function init(): Promise<void> {
     allMeals = await fetchMeals();
     renderMeals(allMeals);
   } catch {
-    errorEl.textContent =
-      "Impossible de charger les repas. Veuillez réessayer.";
+    if (errorEl) {
+      errorEl.textContent =
+        "Impossible de charger les repas. Veuillez réessayer.";
+    }
   }
 }
 
